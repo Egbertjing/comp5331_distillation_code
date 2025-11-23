@@ -14,6 +14,9 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='Games_5core', help='Source domain')
     parser.add_argument('--exp_type', type=str, default='srec')
 
+    parser.add_argument('--save_name', type=str, default='LLM_Rec')
+    parser.add_argument('--pred_samples', type=int, default=50, help='Number of samples to predict')
+
     parser.add_argument('--embedding', type=str, default='', help='Whether to use source domain data')
     parser.add_argument('--seq_embedding', type=str, default='', help='whether pre-trained sequence embeddings are used')
 
@@ -41,7 +44,6 @@ def calculate_mean_and_std(results):
     return stats
 
 
-
 if __name__ == '__main__':
     args, unparsed_args = parse_args()
     command_line_configs = parse_command_line_args(unparsed_args)
@@ -53,6 +55,7 @@ if __name__ == '__main__':
 
     exp_seeds = [2024, 2025, 2026]
     test_results = []
+    all_preds = []
     for seed in exp_seeds:
         merged_dict['rand_seed'] = seed
 
@@ -60,9 +63,10 @@ if __name__ == '__main__':
             model_name=args.model,
             config_dict= merged_dict
         )
-        test_result, exp_config = runner.run()
+        test_result, all_preds, exp_config = runner.run()
 
         test_results.append(test_result)
+        all_preds.append(all_preds)
     
     # calcuate average and std of test results
     stats = calculate_mean_and_std(test_results)
@@ -85,6 +89,16 @@ if __name__ == '__main__':
                 f.write(f'{key}: {value}\n')
             f.write("\n")
     
+    # Convert all_preds to CPU and then to int
+    import torch
+    all_preds = torch.concat(all_preds[:-1], dim=0)
+
+    all_preds_np = all_preds.cpu().numpy()
+
+    with open(f'{result_save_dir}/all_preds.npy', 'wb') as f:
+        np.save(f, all_preds_np)
+    
+
     # save config as pretty json file
     with open(f'{result_save_dir}/config.json', 'w') as f:
         json.dump(merged_dict, f, indent=4)

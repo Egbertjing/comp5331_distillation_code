@@ -72,7 +72,7 @@ class BaseTrainer(object):
 
             # Evaluation
             if (epoch + 1) % self.config['eval_interval'] == 0:
-                all_results = self.evaluate(val_dataloader, split='val')
+                all_results, _ = self.evaluate(val_dataloader, split='val')
                 if self.accelerator.is_main_process:
                     for key in all_results:
                         self.accelerator.log({f"Val_Metric/{key}": all_results[key]}, step=epoch + 1)
@@ -102,6 +102,7 @@ class BaseTrainer(object):
         self.model.eval()
 
         all_results = defaultdict(list)
+        all_preds = []
         val_progress_bar = tqdm(
             dataloader,
             total=len(dataloader),
@@ -121,13 +122,17 @@ class BaseTrainer(object):
                 for key, value in results.items():
                     all_results[key].append(value)
 
+                all_preds.append(preds)
+
+
 
         output_results = OrderedDict()
         for metric in self.config['metrics']:
             for k in self.config['topk']:
                 key = f"{metric}@{k}"
                 output_results[key] = torch.cat(all_results[key]).mean().item()
-        return output_results
+        return output_results, all_preds
+
 
     def end(self):
         """

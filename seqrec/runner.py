@@ -123,7 +123,7 @@ class Runner:
                 print(f'Loaded best model checkpoint from {self.trainer.saved_model_ckpt}')
 
         if self.config.get('step', None) != 0:
-            test_results = self.trainer.evaluate(test_dataloader)
+            test_results, all_preds = self.trainer.evaluate(test_dataloader)
             print(test_results)
             if self.accelerator.is_main_process:
                 for key in test_results:
@@ -147,5 +147,5 @@ class Runner:
                     print(f"{self.trainer.saved_model_ckpt} not found.")
 
         self.trainer.end()
-        return test_results, self.config
+        return test_results, all_preds, self.config
 
