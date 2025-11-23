@@ -1,0 +1,13 @@
+# lr: 1e-2
+# weight_decay: 3e-4
+loss_type: ce
+
+hidden_size: 128
+layer_num: 2
+num_heads: 2
+dropout: 0.3
+
+# sample_func: batch
+sample_func: random
+
+adapter_dims: [-1]  # must ending with -1, which refers to hidden_size
